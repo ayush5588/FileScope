@@ -67,7 +67,7 @@ func (gh ghClient) getAllOpenPRs(f model.FileInfo) ([]model.PR, error) {
 // GetFileModifyingPRs returns PRs (open PRs) that are modifying the given file
 func GetFileModifyingPRs(fileInfo model.FileInfo) ([]model.PR, error) {
 
-	token := "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"
+	token := ""
 
 	ghClient := NewGitHubClient(token)
 
