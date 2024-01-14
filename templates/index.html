@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FileScope</title>
+<link rel="stylesheet" href="/templates/styles.css">
+</head>
+<body>
+
+<h1 class="title">FileScope</h1>
+
+<div class="file-path-container">
+  <form method="post" action="http://localhost:8080/getPR">
+    <div class="filePath">
+      <input type="url" name="filePath" id="filePath" placeholder="File Path...">
+    </div>
+    <br>
+    <button type="submit" class="submit-button">Submit</button>
+  </form>
+</div>
+
+<div id="error-message" style="display: none;"></div>
+<div id="loading-animation" style="display: none;">
+    <img src="https://cdn.dribbble.com/users/4241225/screenshots/14521747/media/d9d6f50e1443ecbdef32497685c0b5eb.gif" alt="Loading..." height="600" width="600">
+</div>
+
+<table id="dynamic-table">
+    <thead>
+      <tr>
+        <th>PR</th>
+        <th>CreatedOn</th>
+        <th>Creator</th>
+        <th>Title</th>
+        <th>Branch</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+
+  
+<script>
+    const form = document.querySelector("form");
+    form.addEventListener("submit", (event) => {
+    event.preventDefault(); // Prevent default form submission
+    
+    // Show loading animation
+    document.getElementById("error-message").style.display = "none";
+    document.getElementById("loading-animation").style.display = "block";
+    document.getElementById("dynamic-table").style.display = "none";
+    
+    fetch(form.action, {
+      method: "POST",
+      body: new FormData(form)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error! Status: ${response.status}`);
+        }
+        
+        return response.json();
+    })
+    .then(prs => {
+        populateTable(prs);
+        // Hide loading animation after data is received
+        document.getElementById("loading-animation").style.display = "none";
+    })
+    .catch(error => {
+    // Hide loading animation
+    document.getElementById("loading-animation").style.display = "none";
+
+    // Hide table
+    document.getElementById("dynamic-table").style.display = "none";
+
+    // Display error message
+    const errorMessageElement = document.getElementById("error-message");
+    errorMessageElement.textContent = error.message;
+    errorMessageElement.style.display = "block";
+    });
+});
+
+const populateTable = (prs) => {
+    document.getElementById("dynamic-table").style.display = "block";
+    let prArr = prs.prs
+    const tableBody = document.querySelector("#dynamic-table tbody");
+    tableBody.innerHTML = ""; // Clear any existing table rows
+
+    prArr.forEach(pr => {
+      const row = document.createElement("tr");
+
+      // Create table cells for each property
+      const prCell = document.createElement("a");
+      prCell.href = pr.html_url
+      prCell.target = "_blank"
+      prCell.textContent = pr.number;
+      prCell.style.display = "block";
+      prCell.style.padding = "10px"; // Adjust padding as needed
+      prCell.style.border = "1px solid #ddd"; // Match your table cell styling
+      row.appendChild(prCell);
+
+      const createdAtCell = document.createElement("td");
+      createdAtCell.textContent = pr.created_at.fullDate;
+      row.appendChild(createdAtCell);
+
+      const creatorCell = document.createElement("td");
+      creatorCell.textContent = pr.created_by;
+      row.appendChild(creatorCell);
+
+      const titleCell = document.createElement("td");
+      titleCell.textContent = pr.title;
+      row.appendChild(titleCell);
+
+      const branchCell = document.createElement("td");
+      branchCell.textContent = pr.branch;
+      row.appendChild(branchCell);
+
+      tableBody.appendChild(row);
+    });
+};
+</script>
+
+</body>
+</html>

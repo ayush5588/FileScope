@@ -8,3 +8,10 @@ type FileInfo struct {
 	Path   string `json:"path"`
 	URL    string `json:"url"`
 }
+
+// File represents details of the file in a PR
+type File struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	SHA    string `json:"sha"`
+}

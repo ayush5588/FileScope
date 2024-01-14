@@ -2,10 +2,12 @@ package router
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/ayush5588/FileScope/internal"
 	"github.com/ayush5588/FileScope/internal/handler"
 	"github.com/ayush5588/FileScope/internal/url"
+	"github.com/ayush5588/FileScope/model"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,37 +35,79 @@ func SetupRouter() *gin.Engine {
 		return
 	})
 
+	/*
+		Method: GET
+		Path: /
+		Definition: Serves the home page
+	*/
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
 	router.POST("/getPR", func(c *gin.Context) {
 
 		logger.Info("Serving POST request...")
-		var rb reqBody
-		err := c.ShouldBindJSON(&rb)
+		userInputURL := c.PostForm("filePath")
+		//var userInputURL reqBody
 
-		userInputURL := &rb.URL
+		// err := c.ShouldBindJSON(&userInputURL)
+		// if err != nil {
+		// 	internal.HandleError(c, err)
+		// 	return
+		// }
 
-		err = url.ValidateFilePath(userInputURL)
+		err := url.ValidateFilePath(&userInputURL)
 		if err != nil {
 			logger.Errorw("error in validating filepath", "error", err)
 			internal.HandleError(c, internal.ErrInvalidURL)
 			return
 		}
 
-		urlComponent, err := url.ExtractComponentsFromURL(*userInputURL)
+		urlComponent, err := url.ExtractComponentsFromURL(userInputURL)
 		if err != nil {
 			logger.Errorw("error in extracting details from URL", "error", err)
 			internal.HandleError(c, err)
 			return
 		}
 
-		urlComponent.URL = *userInputURL
+		urlComponent.URL = userInputURL
 
-		prs, err := handler.GetFileModifyingPRs(urlComponent)
+		prs, err := handler.GetFileModifyingPRs(logger, urlComponent)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"result": prs})
+		sortByCreatedOn := func(pr1 model.PR, pr2 model.PR) bool {
+			if pr1.CreatedOn.Year > pr2.CreatedOn.Year {
+				return true
+			} else if pr1.CreatedOn.Year < pr2.CreatedOn.Year {
+				return false
+			} else {
+				if pr1.CreatedOn.Month > pr2.CreatedOn.Month {
+					return true
+				} else if pr1.CreatedOn.Month < pr2.CreatedOn.Month {
+					return false
+				} else {
+					if pr1.CreatedOn.Day > pr2.CreatedOn.Day {
+						return true
+					} else if pr1.CreatedOn.Day < pr2.CreatedOn.Day {
+						return false
+					}
+				}
+
+			}
+
+			return pr1.Number > pr2.Number
+		}
+
+		sort.Slice(prs, func(i, j int) bool {
+			return sortByCreatedOn(prs[i], prs[j])
+		})
+
+		//c.HTML(http.StatusOK, "index.html", gin.H{"prs": prs})
+		c.JSON(http.StatusOK, gin.H{"prs": prs})
+
 		return
 
 	})

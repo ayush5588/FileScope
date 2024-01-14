@@ -23,13 +23,19 @@ func HandleError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, ErrOwnerNotFound):
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "Owner cannot be detected in the given URL."})
+		break
 	case errors.Is(err, ErrRepoNotFound):
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "Repository cannot be detected in the given URL."})
+		break
 	case errors.Is(err, ErrFilePathCannotBeDetected):
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "File path cannot be detected in the given URL."})
+		break
 	case errors.Is(err, ErrInvalidURL):
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "Invalid URL. Please provide a valid URL."})
+		break
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Error in extracting details from the given file path url."})
+		break
 	}
-	c.JSON(http.StatusInternalServerError, gin.H{"msg": "Error in extracting details from the given file path url."})
 	return
 }

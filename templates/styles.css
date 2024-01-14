@@ -1,0 +1,95 @@
+/* Reset some default styles */
+
+body, h1, h2, h3, p, ul, li {
+    margin: 0;
+    padding: 0;
+  }
+  
+
+/* Title and search bar container */
+.title {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff; /* Optional background color */
+    z-index: 10; /* Ensure it stays on top */
+    text-align: center;
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+.file-path-container {
+  margin-bottom: 20px;
+}
+  
+  /* File path container styling */
+  .file-path-container {
+    max-width: 800px;
+    width: 300px;
+    margin: 0 auto; /* Center the container */
+    padding: 20px;
+  }
+  
+  #filePath {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 3px;
+    font-size: 16px;
+  }
+  
+  input[type="url"], input[type="text"] {
+    width: 300px;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid black;
+  }
+  
+  button {
+    display: block; /* Make it block-level for centering */
+    margin: 0 auto; /* Center it within its parent container */
+    background: #4CAF50;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  #dynamic-table {
+    text-align: center; /* Align text to center */
+    /* border: 1px solid #ddd; Add borders */
+    padding: 20px 20px 80px 60px;
+    margin: 50px;
+    margin: 0 auto; /*Center the table horizontally */
+    margin-top: 80px;
+    height: 500px;
+    position: relative;
+    transform: none;
+  }
+  
+  th, td {
+    text-align: center; /* Align text to center */
+    padding: 10px; /* Add padding */
+    border: 1px solid #ddd; /* Add borders */
+  }
+  
+  /* Styling for table headers */
+  th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  #loading-animation {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center it horizontally and vertically */
+    z-index: 999;
+  }
+  
+  #loading-animation img {
+    max-width: 100%; /* Ensure image doesn't exceed container width */
+  }
+  
