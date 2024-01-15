@@ -18,7 +18,7 @@
   </form>
 </div>
 
-<div id="error-message" style="display: none;"></div>
+<div id="error-message"></div>
 <div id="loading-animation" style="display: none;">
     <img src="https://cdn.dribbble.com/users/4241225/screenshots/14521747/media/d9d6f50e1443ecbdef32497685c0b5eb.gif" alt="Loading..." height="600" width="600">
 </div>
@@ -84,7 +84,17 @@ const populateTable = (prs) => {
     const tableBody = document.querySelector("#dynamic-table tbody");
     tableBody.innerHTML = ""; // Clear any existing table rows
 
-    prArr.forEach(pr => {
+    if (prArr.length == 0) {
+      document.getElementById("dynamic-table").style.display = "none";
+      const errorMessageElement = document.getElementById("error-message");
+      errorMessageElement.textContent = "No Open PRs modifying the file"
+      errorMessageElement.style.textAlign = 'center';
+      errorMessageElement.style.fontWeight = 'bold';
+      errorMessageElement.style.fontSize = '24px';
+      errorMessageElement.style.color = "black";
+      errorMessageElement.style.display = "block";
+    } else {
+      prArr.forEach(pr => {
       const row = document.createElement("tr");
 
       // Create table cells for each property
@@ -115,6 +125,9 @@ const populateTable = (prs) => {
 
       tableBody.appendChild(row);
     });
+    }
+
+    
 };
 </script>
 

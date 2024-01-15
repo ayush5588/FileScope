@@ -60,13 +60,14 @@ body, h1, h2, h3, p, ul, li {
   #dynamic-table {
     display: flex; /* Make the table a flex container */
     justify-content: center; /*Center the table horizontally */
-    margin-top: 20px; /* Add some top margin for visual spacing */
+    /* margin-top: 20px; Add some top margin for visual spacing */
   /* Remove unnecessary padding: */
     padding: 40px;
-    margin-left: auto;
-    margin-right: auto;
+    /* margin-left: auto;
+    margin-right: auto; */
     width: 500px;
     text-align: center; /* Align text to center */
+    margin: 25px auto;
   }
   
   th, td {
@@ -84,7 +85,7 @@ body, h1, h2, h3, p, ul, li {
     background-color: #f2f2f2;
     font-weight: bold;
   }
-  
+
   #loading-animation {
     position: absolute;
     top: 50%;
