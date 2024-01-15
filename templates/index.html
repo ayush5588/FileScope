@@ -7,9 +7,10 @@
 <body>
 
 <h1 class="title">FileScope</h1>
+<h3>Find open PRs which are modifying your file</h3>
 
 <div class="file-path-container">
-  <form method="post" action="http://localhost:8080/getPR">
+  <form method="post" action="https://filescope-fb3vzp5uvq-el.a.run.app/getPR">
     <div class="filePath">
       <input type="url" name="filePath" id="filePath" placeholder="File Path...">
     </div>
@@ -36,7 +37,15 @@
     <tbody></tbody>
   </table>
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-36J1SLZ1FL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
 
+  gtag('config', 'G-36J1SLZ1FL');
+</script>
   
 <script>
     const form = document.querySelector("form");
