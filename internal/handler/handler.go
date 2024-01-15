@@ -2,10 +2,12 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
 
+	"github.com/ayush5588/FileScope/internal"
 	"github.com/ayush5588/FileScope/model"
 	"github.com/google/go-github/v58/github"
 	"go.uber.org/zap"
@@ -99,7 +101,15 @@ func (gh GitHubClient) getModifiedFiles(pr model.PR, fileInfo model.FileInfo) ([
 func GetFileModifyingPRs(logger *zap.SugaredLogger, fileInfo model.FileInfo) ([]model.PR, error) {
 	logger.Info("inside GetFileModifyingPRs...")
 
-	token := ""
+	token, err := internal.GetGHToken()
+	if err != nil {
+		if errors.Is(err, internal.ErrNoValidToken) {
+			logger.Errorw("no valid token error", "error", err)
+			return nil, err
+		}
+
+		return nil, err
+	}
 
 	ghClient := NewGitHubClient(token)
 
@@ -128,7 +138,6 @@ func GetFileModifyingPRs(logger *zap.SugaredLogger, fileInfo model.FileInfo) ([]
 			if err != nil {
 				return
 			}
-			logger.Info("modified files recieved")
 			for _, file := range files {
 				if file.Name == path {
 					logger.Infof("found PR match - %s", pr.Number)

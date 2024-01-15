@@ -1,10 +1,14 @@
 package internal
 
 import (
-	"time"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
+	"time"
+)
+
+var (
+	GitHubToken string
 )
 
 // GetLogger ...
@@ -19,4 +23,13 @@ func GetLogger() *zap.SugaredLogger {
 	logger := zapProd.Sugar()
 
 	return logger
+}
+
+func GetGHToken() (string, error) {
+
+	GitHubToken = os.Getenv("GH_TOKEN")
+	if GitHubToken == "" {
+		return GitHubToken, ErrNoValidToken
+	}
+	return GitHubToken, nil
 }

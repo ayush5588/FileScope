@@ -16,6 +16,8 @@ var (
 	ErrFilePathCannotBeDetected = errors.New("file path not found in the given path url")
 	// ErrInvalidURL ...
 	ErrInvalidURL = errors.New("invalid url")
+	// ErrNoValidToken ...
+	ErrNoValidToken = errors.New("rate limit hit for all the tokens. Wait for an hour")
 )
 
 // HandleError ...
@@ -34,7 +36,7 @@ func HandleError(c *gin.Context, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "Invalid URL. Please provide a valid URL."})
 		break
 	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Error in extracting details from the given file path url."})
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Please try again after some time"})
 		break
 	}
 	return

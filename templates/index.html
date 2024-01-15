@@ -92,10 +92,10 @@ const populateTable = (prs) => {
       prCell.href = pr.html_url
       prCell.target = "_blank"
       prCell.textContent = pr.number;
-      prCell.style.display = "block";
-      prCell.style.padding = "10px"; // Adjust padding as needed
-      prCell.style.border = "1px solid #ddd"; // Match your table cell styling
-      row.appendChild(prCell);
+      // prCell.style.border = "1px solid #ddd"; // Match your table cell styling
+      const prtdCell = document.createElement("td");
+      prtdCell.appendChild(prCell)
+      row.appendChild(prtdCell);
 
       const createdAtCell = document.createElement("td");
       createdAtCell.textContent = pr.created_at.fullDate;

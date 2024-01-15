@@ -58,21 +58,25 @@ body, h1, h2, h3, p, ul, li {
   }
   
   #dynamic-table {
+    display: flex; /* Make the table a flex container */
+    justify-content: center; /*Center the table horizontally */
+    margin-top: 20px; /* Add some top margin for visual spacing */
+  /* Remove unnecessary padding: */
+    padding: 40px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 500px;
     text-align: center; /* Align text to center */
-    /* border: 1px solid #ddd; Add borders */
-    padding: 20px 20px 80px 60px;
-    margin: 50px;
-    margin: 0 auto; /*Center the table horizontally */
-    margin-top: 80px;
-    height: 500px;
-    position: relative;
-    transform: none;
   }
   
   th, td {
     text-align: center; /* Align text to center */
-    padding: 10px; /* Add padding */
+    padding: 10px; /*Add padding*/
     border: 1px solid #ddd; /* Add borders */
+    width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
   }
   
   /* Styling for table headers */
