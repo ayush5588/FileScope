@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ayush5588/FileScope/internal"
@@ -15,7 +16,6 @@ import (
 	"github.com/ayush5588/FileScope/model"
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron"
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
@@ -72,10 +72,15 @@ func manageToken(logger *zap.SugaredLogger) error {
 			2.3 If <20, assign the next token value to the GITHUB_TOKEN env var
 			2.4 Repeat the step 2.3 until the valid token found
 	*/
-	myenv, err := godotenv.Read("token.env")
-	if err != nil {
-		logger.Errorw("error in reading token.env file", "err", err)
-		return err
+
+	myenv := make(map[string]string)
+
+	tc := os.Getenv("TOKEN_COUNT")
+	tokenCount, _ := strconv.Atoi(tc)
+	for i := 1; i <= tokenCount; i++ {
+		tokenName := fmt.Sprintf("GITHUB_TOKEN_%d", i)
+		tokenValue := os.Getenv(tokenName)
+		myenv[tokenName] = tokenValue
 	}
 
 	var GitHubToken string

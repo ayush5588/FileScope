@@ -13,7 +13,6 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-COPY token.env token.env
 
 RUN go build -o filescope
 
