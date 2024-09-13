@@ -69,7 +69,7 @@ func manageToken(logger *zap.SugaredLogger) error {
 		2. In each iteration do the following:
 			2.1 Get the current GITHUB_TOKEN env var value
 			2.2 Make a rate limit call to check number of reqs left
-			2.3 If <20, assign the next token value to the GITHUB_TOKEN env var
+			2.3 If <50, assign the next token value to the GITHUB_TOKEN env var
 			2.4 Repeat the step 2.3 until the valid token found
 	*/
 
