@@ -25,17 +25,17 @@ func NewGitHubClient(authToken string) GitHubClient {
 	return GitHubClient{gc}
 }
 
-func (gh GitHubClient) getAllOpenPRs(f model.FileInfo) ([]model.PR, error) {
-	var PRList []model.PR
+func (g GitHubClient) getAllClosedPRs(f model.FileInfo) ([]model.PR, error) {
+	closedPRList := []model.PR{}
 	opt := &github.PullRequestListOptions{
+		State:       "closed",
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
-
 	var prList []*github.PullRequest
 
 	// For pagination support
 	for {
-		pullRequests, resp, err := gh.PullRequests.List(context.Background(), f.Owner, f.Repo, opt)
+		pullRequests, resp, err := g.PullRequests.List(context.Background(), f.Owner, f.Repo, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -67,18 +67,69 @@ func (gh GitHubClient) getAllOpenPRs(f model.FileInfo) ([]model.PR, error) {
 			CreatedOn: date,
 		}
 
-		PRList = append(PRList, customPR)
+		closedPRList = append(closedPRList, customPR)
 	}
 
-	return PRList, nil
+	return closedPRList, nil
+
 }
 
-func (gh GitHubClient) getModifiedFiles(pr model.PR, fileInfo model.FileInfo) ([]model.File, error) {
+// getAllOpenPRs lists all the open PR(s) of the repository
+func (g GitHubClient) getAllOpenPRs(f model.FileInfo) ([]model.PR, error) {
+	openPRList := []model.PR{}
+	opt := &github.PullRequestListOptions{
+		State:       "open",
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+
+	var prList []*github.PullRequest
+
+	// For pagination support
+	for {
+		pullRequests, resp, err := g.PullRequests.List(context.Background(), f.Owner, f.Repo, opt)
+		if err != nil {
+			return nil, err
+		}
+
+		prList = append(prList, pullRequests...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opt.Page = resp.NextPage
+	}
+
+	for _, pr := range prList {
+		year, month, day := pr.CreatedAt.Date()
+		date := model.CreationDate{
+			Day:      fmt.Sprint(day),
+			Month:    month.String(),
+			Year:     fmt.Sprint(year),
+			FullDate: fmt.Sprintf("%d/%d/%d", day, month, year),
+		}
+		customPR := model.PR{
+			Number:    fmt.Sprint(*pr.Number),
+			URL:       *pr.HTMLURL,
+			State:     *pr.State,
+			Title:     *pr.Title,
+			CreatedBy: pr.Head.User.GetLogin(),
+			Branch:    pr.Head.GetLabel(),
+			CreatedOn: date,
+		}
+
+		openPRList = append(openPRList, customPR)
+	}
+
+	return openPRList, nil
+}
+
+func (g GitHubClient) getModifiedFiles(pr model.PR, fileInfo model.FileInfo) ([]model.File, error) {
 	var files []model.File
 
 	prNumber, _ := strconv.Atoi(pr.Number)
 
-	commitFiles, _, err := gh.PullRequests.ListFiles(context.Background(), fileInfo.Owner, fileInfo.Repo, prNumber, &github.ListOptions{})
+	commitFiles, _, err := g.PullRequests.ListFiles(context.Background(), fileInfo.Owner, fileInfo.Repo, prNumber, &github.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -98,39 +149,57 @@ func (gh GitHubClient) getModifiedFiles(pr model.PR, fileInfo model.FileInfo) ([
 }
 
 // GetFileModifyingPRs returns PRs (open PRs) that are modifying the given file
-func GetFileModifyingPRs(logger *zap.SugaredLogger, fileInfo model.FileInfo) ([]model.PR, error) {
+// TODO: take github token as argument and if it's empty, then read the token from the env variable
+func GetFileModifyingPRs(logger *zap.SugaredLogger, fileInfo model.FileInfo, tokenOverride ...string) ([]model.PR, error) {
 	logger.Info("inside GetFileModifyingPRs...")
 
-	token, err := internal.GetGHToken()
-	if err != nil {
-		if errors.Is(err, internal.ErrNoValidToken) {
-			logger.Errorw("no valid token error", "error", err)
+	var token string
+	if len(tokenOverride) > 0 && tokenOverride[0] != "" {
+		token = tokenOverride[0]
+	} else {
+		var err error
+		token, err = internal.GetGHToken()
+		if err != nil {
+			if errors.Is(err, internal.ErrNoValidToken) {
+				logger.Errorw("no valid token error", "error", err)
+				return nil, err
+			}
 			return nil, err
 		}
-
-		return nil, err
 	}
 
 	ghClient := NewGitHubClient(token)
 
 	finalPRList := make([]model.PR, 0)
 
-	// Get all the Open PRs for the given repo
+	// Get all the Open PRs for the given repository
 	openPRs, err := ghClient.getAllOpenPRs(fileInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	/* For each entry in openPRs, call the File_Changed_In_PR api
+	// Get all the Closed PRs for the given repository
+	closedPRs, err := ghClient.getAllClosedPRs(fileInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	allRelevantPRs := make([]model.PR, 0)
+
+	allRelevantPRs = append(allRelevantPRs, openPRs...)
+
+	allRelevantPRs = append(allRelevantPRs, closedPRs...)
+
+	/* For each entry in allRelevantPRs, call the ListFiles to get the files modified in that PR
 	   Then check if our file is in those changed files
 	   		If yes then add it to the list otherwise continue
 	*/
 	path := fileInfo.Path
 
 	var wg sync.WaitGroup
-	wg.Add(len(openPRs))
+	wg.Add(len(allRelevantPRs))
 
-	for _, pr := range openPRs {
+	for _, pr := range allRelevantPRs {
 		go func(fileInfo model.FileInfo, pr model.PR, path string) {
 			defer wg.Done()
 			// Call the api to get the files modified
@@ -151,5 +220,4 @@ func GetFileModifyingPRs(logger *zap.SugaredLogger, fileInfo model.FileInfo) ([]
 	wg.Wait()
 
 	return finalPRList, nil
-
 }

@@ -1,13 +1,12 @@
 package router
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"sort"
-	"strconv"
 	"time"
 
 	"github.com/ayush5588/FileScope/internal"
@@ -17,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-co-op/gocron"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 type reqBody struct {
@@ -75,32 +75,43 @@ func manageToken(logger *zap.SugaredLogger) error {
 
 	myenv := make(map[string]string)
 
-	tc := os.Getenv("TOKEN_COUNT")
-	tokenCount, _ := strconv.Atoi(tc)
-	for i := 1; i <= tokenCount; i++ {
-		tokenName := fmt.Sprintf("GITHUB_TOKEN_%d", i)
-		tokenValue := os.Getenv(tokenName)
-		myenv[tokenName] = tokenValue
+	id := 1
+	for {
+		tokenName := fmt.Sprintf("GITHUB_TOKEN_%d", id)
+		tokenVal := os.Getenv(tokenName)
+		if tokenVal == "" {
+			break
+		}
+		myenv[tokenName] = tokenVal
+		id += 1
 	}
 
-	var GitHubToken string
-	if token, ok := myenv["GH_TOKEN"]; ok {
-		GitHubToken = token
-	}
+	var githubToken string
 
-	if GitHubToken == "" {
-		GitHubToken = myenv["GH_TOKEN_1"]
+	// Iterate over the env variables of pattern GITHUB_TOKEN_<%d>
+	id = 1
+	for {
+		tokenName := fmt.Sprintf("GITHUB_TOKEN_%d", id)
+		tokenVal := os.Getenv(tokenName)
+		if tokenVal == "" {
+			break
+		}
+		if githubToken == "" {
+			githubToken = tokenVal
+		}
+		myenv[tokenName] = tokenVal
+		id += 1
 	}
 	logger.Info("Making api call for the current token")
 	// Make a API call to get the request lefts for the current token
-	reqLeft, err := makeRateLimitAPICall(GitHubToken)
+	reqLeft, err := makeRateLimitAPICall(githubToken)
 	if err != nil {
 		logger.Errorw("error in making rate-limit api acall for current token", "err", err)
 		return err
 	}
 
 	if reqLeft > 50 {
-		os.Setenv("GH_TOKEN", GitHubToken)
+		os.Setenv("GH_TOKEN", githubToken)
 		return nil
 	}
 
@@ -137,6 +148,23 @@ func corsMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func comparePR(pr1, pr2 model.PR) int {
+	d1 := pr1.CreatedOn.FullDate
+	d2 := pr2.CreatedOn.FullDate
+
+	date1, _ := time.Parse("2/1/2006", d1)
+	date2, _ := time.Parse("2/1/2006", d2)
+
+	if !date1.Equal(date2) {
+		if date1.After(date2) {
+			return -1
+		}
+		return 1
+	}
+
+	return cmp.Compare(pr2.Number, pr1.Number)
 }
 
 // SetupRouter initalizes the router
@@ -183,6 +211,8 @@ func SetupRouter() *gin.Engine {
 
 		logger.Info("Serving POST request...")
 		userInputURL := c.PostForm("filePath")
+		token := c.PostForm("token")
+		// if user has provided their GitHub Token, then we will not set / read the GitHub Token from env value.
 		//var userInputURL reqBody
 
 		// err := c.ShouldBindJSON(&userInputURL)
@@ -207,39 +237,14 @@ func SetupRouter() *gin.Engine {
 
 		urlComponent.URL = userInputURL
 
-		prs, err := handler.GetFileModifyingPRs(logger, urlComponent)
+		prs, err := handler.GetFileModifyingPRs(logger, urlComponent, token)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err})
 			return
 		}
 
-		sortByCreatedOn := func(pr1 model.PR, pr2 model.PR) bool {
-			if pr1.CreatedOn.Year > pr2.CreatedOn.Year {
-				return true
-			} else if pr1.CreatedOn.Year < pr2.CreatedOn.Year {
-				return false
-			} else {
-				if pr1.CreatedOn.Month > pr2.CreatedOn.Month {
-					return true
-				} else if pr1.CreatedOn.Month < pr2.CreatedOn.Month {
-					return false
-				} else {
-					if pr1.CreatedOn.Day > pr2.CreatedOn.Day {
-						return true
-					} else if pr1.CreatedOn.Day < pr2.CreatedOn.Day {
-						return false
-					}
-				}
-
-			}
-
-			return pr1.Number > pr2.Number
-		}
-
-		sort.Slice(prs, func(i, j int) bool {
-			return sortByCreatedOn(prs[i], prs[j])
-		})
-
+		slices.SortFunc(prs, comparePR)
+		fmt.Println(prs[0])
 		//c.HTML(http.StatusOK, "index.html", gin.H{"prs": prs})
 		c.JSON(http.StatusOK, gin.H{"prs": prs})
 

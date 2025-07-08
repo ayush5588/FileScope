@@ -1,144 +1,185 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>FileScope</title>
-<link rel="stylesheet" href="/templates/styles.css">
+  <title>FileScope</title>
+  <link rel="stylesheet" href="/templates/styles.css">
 </head>
+
 <body>
 
-<h1 class="title">FileScope</h1>
-<h3>Find open GitHub PRs which are modifying a repository file</h3>
+  <div class="container">
+    <span class="logo">F</span>
+    <h1 class="title">FileScope</h1>
+    <h3>See who's touching your files</h3>
 
-<div class="file-path-container">
-  <form method="post" action="https://filescope-fb3vzp5uvq-el.a.run.app/getPR">
-    <div class="filePath">
-      <input type="url" name="filePath" id="filePath" placeholder="Full file Path...">
+    <form id="pr-form" method="post" action="/getPR">
+      <div class="input-group">
+        <input type="url" name="filePath" id="filePath" placeholder="Paste full GitHub file URL..." required>
+      </div>
+      <div class="input-group">
+        <input type="password" name="token" id="token" placeholder="GitHub Token (optional)">
+      </div>
+      <button type="submit" class="submit-button">Find PRs</button>
+    </form>
+
+    <div id="error-message" class="message error"></div>
+    <div id="success-message" class="message success"></div>
+    <div id="loading-overlay">
+      <div class="loader-box">
+        <div class="spinner"></div>
+        <div class="loading-text">Fetching PRs, please wait...</div>
+      </div>
     </div>
-    <br>
-    <button type="submit" class="submit-button">Submit</button>
-  </form>
-</div>
 
-<div id="error-message"></div>
-<div id="loading-animation" style="display: none;">
-    <img src="https://cdn.dribbble.com/users/4241225/screenshots/14521747/media/d9d6f50e1443ecbdef32497685c0b5eb.gif" alt="Loading..." height="600" width="600">
-</div>
+    <div id="pr-tabs" style="display:none;">
+      <div class="tabs">
+        <button id="open-tab" class="tab active">Open PRs (<span id="open-count">0</span>)</button>
+        <button id="closed-tab" class="tab">Closed PRs (<span id="closed-count">0</span>)</button>
+      </div>
+      <div class="table-container">
+        <table id="open-table" class="pr-table">
+          <thead>
+            <tr>
+              <th>PR #</th>
+              <th>Created On</th>
+              <th>Creator</th>
+              <th>Title</th>
+              <th>Branch</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <table id="closed-table" class="pr-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>PR #</th>
+              <th>Created On</th>
+              <th>Creator</th>
+              <th>Title</th>
+              <th>Branch</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-<table id="dynamic-table">
-    <thead>
-      <tr>
-        <th>PR</th>
-        <th>CreatedOn</th>
-        <th>Creator</th>
-        <th>Title</th>
-        <th>Branch</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-36J1SLZ1FL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-36J1SLZ1FL"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    gtag('config', 'G-36J1SLZ1FL');
+  </script>
 
-  gtag('config', 'G-36J1SLZ1FL');
-</script>
-  
-<script>
-    const form = document.querySelector("form");
-    form.addEventListener("submit", (event) => {
-    event.preventDefault(); // Prevent default form submission
-    
-    // Show loading animation
-    document.getElementById("error-message").style.display = "none";
-    document.getElementById("loading-animation").style.display = "block";
-    document.getElementById("dynamic-table").style.display = "none";
-    
-    fetch(form.action, {
-      method: "POST",
-      body: new FormData(form)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Error! Status: ${response.status}`);
-        }
-        
-        return response.json();
-    })
-    .then(prs => {
-        populateTable(prs);
-        // Hide loading animation after data is received
-        document.getElementById("loading-animation").style.display = "none";
-    })
-    .catch(error => {
-    // Hide loading animation
-    document.getElementById("loading-animation").style.display = "none";
+  <script>
+    const form = document.getElementById("pr-form");
+    const errorMessage = document.getElementById("error-message");
+    const successMessage = document.getElementById("success-message");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const prTabs = document.getElementById("pr-tabs");
+    const openTabBtn = document.getElementById("open-tab");
+    const closedTabBtn = document.getElementById("closed-tab");
+    const openTable = document.getElementById("open-table");
+    const closedTable = document.getElementById("closed-table");
+    const openCount = document.getElementById("open-count");
+    const closedCount = document.getElementById("closed-count");
+    const openTbody = openTable.querySelector("tbody");
+    const closedTbody = closedTable.querySelector("tbody");
 
-    // Hide table
-    document.getElementById("dynamic-table").style.display = "none";
-
-    // Display error message
-    const errorMessageElement = document.getElementById("error-message");
-    errorMessageElement.textContent = error.message;
-    errorMessageElement.style.display = "block";
-    });
-});
-
-const populateTable = (prs) => {
-    document.getElementById("dynamic-table").style.display = "block";
-    let prArr = prs.prs
-    const tableBody = document.querySelector("#dynamic-table tbody");
-    tableBody.innerHTML = ""; // Clear any existing table rows
-
-    if (prArr.length == 0) {
-      document.getElementById("dynamic-table").style.display = "none";
-      const errorMessageElement = document.getElementById("error-message");
-      errorMessageElement.textContent = "No Open PRs modifying the file"
-      errorMessageElement.style.textAlign = 'center';
-      errorMessageElement.style.fontWeight = 'bold';
-      errorMessageElement.style.fontSize = '24px';
-      errorMessageElement.style.color = "black";
-      errorMessageElement.style.display = "block";
-    } else {
-      prArr.forEach(pr => {
-      const row = document.createElement("tr");
-
-      // Create table cells for each property
-      const prCell = document.createElement("a");
-      prCell.href = pr.html_url
-      prCell.target = "_blank"
-      prCell.textContent = pr.number;
-      // prCell.style.border = "1px solid #ddd"; // Match your table cell styling
-      const prtdCell = document.createElement("td");
-      prtdCell.appendChild(prCell)
-      row.appendChild(prtdCell);
-
-      const createdAtCell = document.createElement("td");
-      createdAtCell.textContent = pr.created_at.fullDate;
-      row.appendChild(createdAtCell);
-
-      const creatorCell = document.createElement("td");
-      creatorCell.textContent = pr.created_by;
-      row.appendChild(creatorCell);
-
-      const titleCell = document.createElement("td");
-      titleCell.textContent = pr.title;
-      row.appendChild(titleCell);
-
-      const branchCell = document.createElement("td");
-      branchCell.textContent = pr.branch;
-      row.appendChild(branchCell);
-
-      tableBody.appendChild(row);
-    });
+    function setActiveTab(tab) {
+      if (tab === "open") {
+        openTabBtn.classList.add("active");
+        closedTabBtn.classList.remove("active");
+        openTable.style.display = "table";
+        closedTable.style.display = "none";
+      } else {
+        openTabBtn.classList.remove("active");
+        closedTabBtn.classList.add("active");
+        openTable.style.display = "none";
+        closedTable.style.display = "table";
+      }
     }
+    openTabBtn.onclick = () => setActiveTab("open");
+    closedTabBtn.onclick = () => setActiveTab("closed");
 
-    
-};
-</script>
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorMessage.style.display = "none";
+      successMessage.style.display = "none";
+      prTabs.style.display = "none";
+      loadingOverlay.classList.add("active");
+      openTbody.innerHTML = "";
+      closedTbody.innerHTML = "";
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: formData,
+        });
+        loadingOverlay.classList.remove("active");
+        if (!response.ok) {
+          const err = await response.json();
+          errorMessage.textContent = err.msg || "Something went wrong.";
+          errorMessage.style.display = "block";
+          return;
+        }
+        const prs = await response.json();
+        if (!prs.prs || prs.prs.length === 0) {
+          errorMessage.textContent = "No PRs found modifying the file.";
+          errorMessage.style.display = "block";
+          return;
+        }
+        // Split PRs into open and closed
+        const openPRs = prs.prs.filter(pr => pr.state && pr.state.toLowerCase() === "open");
+        const closedPRs = prs.prs.filter(pr => pr.state && pr.state.toLowerCase() === "closed");
+        openCount.textContent = openPRs.length;
+        closedCount.textContent = closedPRs.length;
+        populateTable(openTbody, openPRs);
+        populateTable(closedTbody, closedPRs);
+        prTabs.style.display = "block";
+        setActiveTab("open");
+        successMessage.textContent = `Found ${prs.prs.length} PR(s).`;
+        successMessage.style.display = "block";
+      } catch (e) {
+        loadingOverlay.classList.remove("active");
+        errorMessage.textContent = e.message || "Network error.";
+        errorMessage.style.display = "block";
+      }
+    });
+
+    function populateTable(tbody, prArr) {
+      tbody.innerHTML = "";
+      // Remove any previous no-prs-message
+      const oldMsg = document.querySelector('.no-prs-message');
+      if (oldMsg) oldMsg.remove();
+      if (prArr.length === 0) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'no-prs-message';
+        msgDiv.textContent = 'No PRs found.';
+        tbody.parentElement.parentElement.appendChild(msgDiv);
+        return;
+      }
+      prArr.forEach(pr => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+      <td><a href="${pr.html_url}" target="_blank" rel="noopener noreferrer">${pr.number}</a></td>
+      <td>${pr.created_at.fullDate}</td>
+      <td>${pr.created_by}</td>
+      <td>${pr.title}</td>
+      <td>${pr.branch}</td>
+    `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
 
 </body>
+
 </html>
