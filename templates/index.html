@@ -11,14 +11,14 @@
   <div class="container">
     <span class="logo">F</span>
     <h1 class="title">FileScope</h1>
-    <h3>See who's touching your files</h3>
+    <h3>Identify Contributors to Your Files</h3>
+    <!-- Update the description below the title to mention public repos only -->
+    <p class="subtitle" style="text-align:center; color:#6366f1; margin-bottom: 1.5rem; font-weight: 500;">Note: This
+      tool only works for <b>public</b> GitHub repositories.</p>
 
     <form id="pr-form" method="post" action="/getPR">
       <div class="input-group">
         <input type="url" name="filePath" id="filePath" placeholder="Paste full GitHub file URL..." required>
-      </div>
-      <div class="input-group">
-        <input type="password" name="token" id="token" placeholder="GitHub Token (optional)">
       </div>
       <button type="submit" class="submit-button">Find PRs</button>
     </form>
@@ -128,12 +128,18 @@
           const err = await response.json();
           errorMessage.textContent = err.msg || "Something went wrong.";
           errorMessage.style.display = "block";
+          errorMessage.style.color = "#dc2626"; // force red color
+          errorMessage.style.textAlign = "center"; // center the error message
+          errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
         const prs = await response.json();
         if (!prs.prs || prs.prs.length === 0) {
           errorMessage.textContent = "No PRs found modifying the file.";
           errorMessage.style.display = "block";
+          errorMessage.style.color = "#dc2626"; // force red color
+          errorMessage.style.textAlign = "center"; // center the error message
+          errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
         // Split PRs into open and closed
@@ -151,6 +157,9 @@
         loadingOverlay.classList.remove("active");
         errorMessage.textContent = e.message || "Network error.";
         errorMessage.style.display = "block";
+        errorMessage.style.color = "#dc2626"; // force red color
+        errorMessage.style.textAlign = "center"; // center the error message
+        errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
 
@@ -169,7 +178,7 @@
       prArr.forEach(pr => {
         const row = document.createElement("tr");
         row.innerHTML = `
-      <td><a href="${pr.html_url}" target="_blank" rel="noopener noreferrer">${pr.number}</a></td>
+      <td><a href="${pr.html_url}" target="_bla" reener noreferrer">${pr.number}</a></td>
       <td>${pr.created_at.fullDate}</td>
       <td>${pr.created_by}</td>
       <td>${pr.title}</td>

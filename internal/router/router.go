@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ayush5588/FileScope/internal"
@@ -18,10 +19,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
-
-type reqBody struct {
-	URL string `json:"url"`
-}
 
 func makeRateLimitAPICall(token string) (int, error) {
 
@@ -63,7 +60,7 @@ func makeRateLimitAPICall(token string) (int, error) {
 }
 
 func manageToken(logger *zap.SugaredLogger) error {
-	logger.Info("inside manageToken ...")
+	logger.Info("Inside manageToken ...")
 	/*
 		1. Run a cronjob every 5 minutes
 		2. In each iteration do the following:
@@ -75,33 +72,21 @@ func manageToken(logger *zap.SugaredLogger) error {
 
 	myenv := make(map[string]string)
 
+	var githubToken string
+
 	id := 1
 	for {
 		tokenName := fmt.Sprintf("GITHUB_TOKEN_%d", id)
 		tokenVal := os.Getenv(tokenName)
 		if tokenVal == "" {
 			break
-		}
-		myenv[tokenName] = tokenVal
-		id += 1
-	}
-
-	var githubToken string
-
-	// Iterate over the env variables of pattern GITHUB_TOKEN_<%d>
-	id = 1
-	for {
-		tokenName := fmt.Sprintf("GITHUB_TOKEN_%d", id)
-		tokenVal := os.Getenv(tokenName)
-		if tokenVal == "" {
-			break
-		}
-		if githubToken == "" {
+		} else if githubToken == "" {
 			githubToken = tokenVal
 		}
 		myenv[tokenName] = tokenVal
 		id += 1
 	}
+
 	logger.Info("Making api call for the current token")
 	// Make a API call to get the request lefts for the current token
 	reqLeft, err := makeRateLimitAPICall(githubToken)
@@ -211,7 +196,7 @@ func SetupRouter() *gin.Engine {
 
 		logger.Info("Serving POST request...")
 		userInputURL := c.PostForm("filePath")
-		token := c.PostForm("token")
+		// Removed: token := c.PostForm("token")
 		// if user has provided their GitHub Token, then we will not set / read the GitHub Token from env value.
 		//var userInputURL reqBody
 
@@ -237,9 +222,13 @@ func SetupRouter() *gin.Engine {
 
 		urlComponent.URL = userInputURL
 
-		prs, err := handler.GetFileModifyingPRs(logger, urlComponent, token)
+		prs, err := handler.GetFileModifyingPRs(logger, urlComponent) // Removed token argument
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err})
+			if strings.Contains(err.Error(), internal.ErrPRsNotFound.Error()) {
+				c.JSON(http.StatusInternalServerError, gin.H{"msg": "No pull requests could be found for this repository. The repository may not exist or may be private."})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
 

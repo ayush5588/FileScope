@@ -21,4 +21,4 @@
 go.work
 
 # env file
-token.env
+.env

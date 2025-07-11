@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine
+FROM golang:1.23.0-alpine
 
 WORKDIR $GOPATH/src/github.com/ayush5588/FileScope
 

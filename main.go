@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/ayush5588/FileScope/internal/router"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -11,6 +12,7 @@ const (
 )
 
 func main() {
+	_ = godotenv.Load()
 	r := router.SetupRouter()
 	err := r.Run(portNumber)
 	if err != nil {
