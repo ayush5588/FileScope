@@ -25,7 +25,9 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  width: 800px;
+  height: auto;
+  min-height: 600px;
   margin: 0 auto;
   background: #fff;
   border-radius: 18px;
@@ -337,7 +339,79 @@ input[type="password"]:focus {
 
 @media (max-width: 800px) {
   .container {
-    max-width: 98vw;
-    padding: 16px 2vw 16px 2vw;
+    width: 95vw;
+    max-width: 800px;
+    min-height: 500px;
+    padding: 24px 16px 20px 16px;
+    margin: 16px auto;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  .submit-button {
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .pr-table {
+    font-size: 0.9rem;
+  }
+
+  .pr-table th,
+  .pr-table td {
+    padding: 8px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    width: 98vw;
+    max-width: 480px;
+    min-height: 400px;
+    padding: 20px 12px 16px 12px;
+    margin: 8px auto;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 0.95rem;
+  }
+
+  .logo {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .submit-button {
+    padding: 11px;
+    font-size: 0.95rem;
+  }
+
+  .pr-table {
+    font-size: 0.85rem;
+  }
+
+  .pr-table th,
+  .pr-table td {
+    padding: 6px 3px;
+  }
+
+  .tabs {
+    padding: 4px 2px 0 2px;
+  }
+
+  .tab {
+    padding: 6px 14px;
+    font-size: 0.9rem;
   }
 }
