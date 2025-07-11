@@ -1,6 +1,6 @@
 # FileScope
 
-FileScope is a web application that helps you find all GitHub Pull Requests (PRs), both open and closed, that have modified a specific file in a repository. Simply provide the full GitHub file URL, and FileScope will return a list of PRs that have changed that file.
+FileScope is a web application that helps you find all GitHub Pull Requests (PRs), both open and closed, that have modified a specific file in a public repository. Simply provide the full GitHub file URL, and FileScope will return a list of PRs that have changed that file.
 
 ## Features
 - **Find PRs by File:** Enter a GitHub file URL to see all PRs that have modified it.
@@ -21,12 +21,12 @@ FileScope is a web application that helps you find all GitHub Pull Requests (PRs
    cd FileScope
    ```
 2. **Set up your GitHub token:**
-   - Create a file named `token.env` in the root directory.
+   - Create a file named `.env` in the root directory.
    - Add your GitHub token as an environment variable:
      ```env
-     GH_TOKEN=your_github_token_here
+     GITHUB_TOKEN_1=your_github_token_here
      ```
-   - (Optional) For higher rate limits, you can add multiple tokens as `GITHUB_TOKEN_1`, `GITHUB_TOKEN_2`, etc., and set `TOKEN_COUNT` accordingly.
+   - (Optional) For higher rate limits, you can add multiple tokens as `GITHUB_TOKEN_1`, `GITHUB_TOKEN_2`, etc.
 
 3. **Run the application:**
    ```sh
@@ -38,7 +38,11 @@ FileScope is a web application that helps you find all GitHub Pull Requests (PRs
 You can also run FileScope using Docker:
 ```sh
 docker build -t filescope .
-docker run -p 8080:8080 --env-file token.env filescope
+docker run -p 8080:8080 --env-file .env filescope
+
+OR
+
+docker-compose up --build
 ```
 
 ## Usage
